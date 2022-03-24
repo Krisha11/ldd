@@ -46,6 +46,9 @@ private:
     void GetLoadPtr(const char* bytes, DynInfo& info);
     int GetDynInfo(const std::string file, const char* bytes, DynInfo& info, bool verbose = false);
 
-    void ParseLDPath(std::vector<std::string>& prefixes);
+    void ParseLDPath();
     std::string FindLibrary(const std::string& name);
+
+private:
+    std::vector<std::string> possiblePrefixes;
 };

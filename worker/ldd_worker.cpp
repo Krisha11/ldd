@@ -1,6 +1,10 @@
 #include <ldd_worker.h>
 
-LddWorker::LddWorker() {}
+LddWorker::LddWorker() {
+  possiblePrefixes.push_back("/lib/");
+  possiblePrefixes.push_back("/usr/lib/");
+  ParseLDPath();
+}
 
 int LddWorker::ReadFile(const std::string& file, std::vector<char>& data, bool verbose) {
   data = [fname = file]{
@@ -12,7 +16,7 @@ int LddWorker::ReadFile(const std::string& file, std::vector<char>& data, bool v
     if (verbose) {
       std::cerr << "In file: " << file << ". File is empty or does not exist.\n";
     }
-    return Error::EMPTY_FILE;  // TODO : ENUM
+    return Error::EMPTY_FILE;
   }
 
   // Simple ELF checks
@@ -205,8 +209,7 @@ int LddWorker::GetDirectDependencies(const std::string& file, std::vector<std::s
   return Error::OK;
 }
 
-// TODO: put in constructor
-void LddWorker::ParseLDPath(std::vector<std::string>& prefixes) {
+void LddWorker::ParseLDPath() {
   std::string LD_LIBRARY_PATH = getenv("LD_LIBRARY_PATH");
   if (LD_LIBRARY_PATH == "") {
     return;
@@ -215,20 +218,15 @@ void LddWorker::ParseLDPath(std::vector<std::string>& prefixes) {
   size_t previous = 0;
   size_t index = LD_LIBRARY_PATH.find(";");
   while (index != std::string::npos) {
-      prefixes.push_back(LD_LIBRARY_PATH.substr(previous, index - previous));
+      possiblePrefixes.push_back(LD_LIBRARY_PATH.substr(previous, index - previous));
       previous = index + 1;
       index = LD_LIBRARY_PATH.find(";", previous);
   }
-  prefixes.push_back(LD_LIBRARY_PATH.substr(previous));
+  possiblePrefixes.push_back(LD_LIBRARY_PATH.substr(previous));
 }
 
 std::string LddWorker::FindLibrary(const std::string& name) {
-  std::vector<std::string> prefixes;
-  prefixes.push_back("/lib/");
-  prefixes.push_back("/usr/lib/");
-  ParseLDPath(prefixes);
-
-  for (const auto& prefix : prefixes) {
+  for (const auto& prefix : possiblePrefixes) {
     std::string attempt = prefix + name;
     std::ifstream libF(attempt);
     if (libF) {
