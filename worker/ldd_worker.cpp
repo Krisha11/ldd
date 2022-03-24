@@ -210,11 +210,12 @@ int LddWorker::GetDirectDependencies(const std::string& file, std::vector<std::s
 }
 
 void LddWorker::ParseLDPath() {
-  std::string LD_LIBRARY_PATH = getenv("LD_LIBRARY_PATH");
-  if (LD_LIBRARY_PATH == "") {
+  char* LD_LIBRARY_PATH_CH = getenv("LD_LIBRARY_PATH");
+  if (!LD_LIBRARY_PATH_CH) {
     return;
   }
 
+  std::string LD_LIBRARY_PATH = LD_LIBRARY_PATH_CH;
   size_t previous = 0;
   size_t index = LD_LIBRARY_PATH.find(";");
   while (index != std::string::npos) {
@@ -271,7 +272,7 @@ void LddWorker::Execute(const std::string& file, bool verbose) {
 
   std::cout << "expected import scheme\n";
 
-  // precalac all libraries export names
+  // precalc all libraries export names
   std::vector<std::pair<std::string, std::set<std::string>>> exportNames;
   for (const auto& dependency : dependencies) {
     if (dependency.second == "") {
@@ -286,10 +287,8 @@ void LddWorker::Execute(const std::string& file, bool verbose) {
 
     for (const auto& name : names) {
       s.insert(name);
-      std::cout << name << '\n';
     }
     exportNames.push_back({ dependency.first, s });
-    std::cout << dependency.first << " kek\n";
   }  
 
   std::vector<std::string> importNames;
